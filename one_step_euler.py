@@ -35,11 +35,6 @@ def make_brownian_sig(key, N, res, d, n, s = 0, t = 1):
     function_stream = rp.FunctionStream.from_function(rpbm, ctx = context, resolution = res)
     return function_stream.signature(rp.RealInterval(s,t))
 
-def make_signature(x, d, n, res, s, t):
-    context = rp.get_context(width = d, depth = n, coeffs=rp.DPReal)
-    function_stream = rp.FunctionStream.from_function(_make_path(x), ctx = context, resolution = res)
-    return function_stream.signature(rp.RealInterval(s,t))
-
 def _sig_degrees(sig, d, n):
     expected_length = (d ** (n + 1) - 1)/(d - 1)
     assert len(sig) == expected_length, f"Array length must be {expected_length}, but got {len(sig)}"
