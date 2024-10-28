@@ -48,3 +48,9 @@ def list_unshuffle(ee, max_deg): # in the future it would be better to get max_d
 
 def pi_tuple(tup):
     return tuple(pi1(x) for x in tup)
+
+def removeSmalls(a):
+    """a version of an Elt with tiny elements removed"""
+    assert isinstance(a,Elt), a
+    d=[{k:v for k,v in i.items() if math.fabs(v)>1e-4} for i in a.data] # I chose 4 based on examples
+    return Elt(d)
