@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 
 
 
-def solve_single_path(key, d, y0, A, B):
-    bm = VirtualBrownianTree(0, 1, tol=1e-5, shape=(d,), key=key)
+def solve_single_path(key, d, y0, A, B, tol):
+    bm = VirtualBrownianTree(0, 1, tol=tol, shape=(d,), key=key)
 
     # Define drift and diffusion
     drift = lambda t, y, args: jnp.einsum('ij,j->i', B, y)
@@ -27,18 +27,18 @@ def solve_single_path(key, d, y0, A, B):
         solver=Midpoint(),
         t0=0,
         t1=1,
-        dt0=1e-3,
+        dt0=tol,
         y0=y0,
         saveat=SaveAt(t1=True),
         max_steps=None
     ).ys
     
     
-def monte_carlo(sample_size, d, y0, A, B):
+def monte_carlo(sample_size, d, y0, A, B, grid_size):
     seed = int(time.time() * 1e6) % (2**32 - 1)
     key = jax.random.PRNGKey(seed)
     keys = jax.random.split(key, sample_size)
-    sols = jax.vmap(lambda key: solve_single_path(key, d, y0, A, B))(keys)
+    sols = jax.vmap(lambda key: solve_single_path(key, d, y0, A, B, 1/grid_size))(keys)
     return jnp.mean(sols, axis=0)
 
 
@@ -55,7 +55,7 @@ def mean_ODE(y0, A, B):
         solver=Midpoint(),
         t0=0,
         t1=1,
-        dt0=1e-6,
+        dt0=1e-7,
         y0=y0,
         saveat=SaveAt(t1=True),
         max_steps=None
@@ -177,25 +177,34 @@ def multistep_cubature(y0, A, B, exp_pts, weights, no_intervals):
         ys = f(ys)  # becomes (N, ..., N, e)
     return weighted_sum(ys, weights)
 
+
 def plot_functions(fs, ms, labels=None, title="Function plots",
-                   xlabel="x", ylabel="f(x)", scale="linear"):
+                   xlabel="x", ylabel="f(x)", scale="linear", step=1):
     """
-    Plots a list of functions fs with bullet markers and lines, using input range [1, m_k] for each.
-    
+    Plots functions with markers and lines.
+    - Integer x-ticks and vertical grid lines
+    - Horizontal grid lines at powers of 10 if log scale
+    - Optional step spacing per function
+
     Args:
-        fs: list of callables, each f_k(n) -> float
-        ms: list of ints, length limits per function
+        fs: list of callables f(n) -> float
+        ms: list of ints, domain upper bounds per function
         labels: optional list of strings
         title: plot title
         xlabel, ylabel: axis labels
-        scale: "linear" (default) or "log" for log-y
+        scale: "linear", "log", or "log-log"
+        step: int or list of ints (spacing of input values)
     """
     assert len(fs) == len(ms), "fs and ms must be the same length"
+    if isinstance(step, int):
+        step = [step] * len(fs)
+    assert len(step) == len(fs), "step must be a single int or a list of same length as fs"
 
-    markers = ['^', 's', 'o', 'D', 'x']  # up to 5 styles
+    markers = ['^', 's', 'o', 'D', 'x']
+    max_x = max(ms)
 
-    for idx, (f, m) in enumerate(zip(fs, ms)):
-        x = list(range(1, m + 1))
+    for idx, (f, m, s) in enumerate(zip(fs, ms, step)):
+        x = list(range(s, m + 1, s))
         y = [f(i) for i in x]
         label = labels[idx] if labels else f"f{idx+1}"
         plt.plot(x, y, marker=markers[idx % len(markers)], linestyle='-', label=label)
@@ -203,9 +212,75 @@ def plot_functions(fs, ms, labels=None, title="Function plots",
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
-    if scale == "log":
+
+    if scale == "log-log":
+        plt.xscale("log")
         plt.yscale("log")
+        plt.grid(True, which='major', axis='both')
+    else:
+        plt.xticks(range(1, max_x + 1))
+        plt.grid(True, axis='x')
+        if scale == "log":
+            plt.yscale("log")
+            plt.grid(True, axis='y', which='major')
+        else:
+            plt.grid(True, axis='y')
+
     plt.legend()
-    plt.grid(True)
     plt.tight_layout()
     plt.show()
+    
+    
+def plot_functions(fs, ms, labels=None, title="Function plots",
+                   xlabel="x", ylabel="f(x)", scale="linear", step=1):
+    """
+    Plots functions with markers and lines.
+    - Integer x-ticks and vertical grid lines
+    - Horizontal grid lines at powers of 10 if log scale
+    - Optional step spacing per function
+
+    Args:
+        fs: list of callables f(n) -> float
+        ms: list of ints, domain upper bounds per function
+        labels: optional list of strings
+        title: plot title
+        xlabel, ylabel: axis labels
+        scale: "linear", "log", or "log-log"
+        step: int or list of ints (spacing of input values)
+    """
+    assert len(fs) == len(ms), "fs and ms must be the same length"
+    if isinstance(step, int):
+        step = [step] * len(fs)
+    assert len(step) == len(fs), "step must be a single int or a list of same length as fs"
+
+    markers = ['^', 's', 'o', 'D', 'x']
+    max_x = max(ms)
+
+    for idx, (f, m, s) in enumerate(zip(fs, ms, step)):
+        x = list(range(s, m + 1, s))
+        y = [f(i) for i in x]
+        label = labels[idx] if labels else f"f{idx+1}"
+        plt.plot(x, y, marker=markers[idx % len(markers)], linestyle='-', label=label)
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+
+    if scale == "log-log":
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.grid(True, which='major', axis='both')
+    else:
+        plt.xticks(range(1, max_x + 1))
+        plt.grid(True, axis='x')
+        if scale == "log":
+            plt.yscale("log")
+            plt.grid(True, axis='y', which='major')
+        else:
+            plt.grid(True, axis='y')
+
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
