@@ -86,9 +86,45 @@ def expected_signature(degree : int = 7, dimension : int = 3, drift : bool = Tru
 
 def gaussianCubature(degree : int, dimension : int):
    """Computes a cubature formula for the Gaussian measure, as seen in Stroud"""
-   assert degree in [7,3]
+   assert degree in [7,5,3]
    if degree == 3:
       return [([None] + [0] * i + [sqrt(dimension)] + [0] * (dimension-i-1) , 1 / (2 * dimension)) for i in range(dimension)] + [([None] + [0] * i + [- sqrt(dimension)] + [0] * (dimension - i - 1), 1 / (2 * dimension)) for i in range(dimension)]
+   if degree == 5:
+      d = 3
+      eta = 0.476731294622796
+      lam = 0.935429018879534
+      xi = -0.731237647787132
+      mu =  0.433155309477649
+      gam = 2.66922328697744
+      A =   0.242000000000000
+      B =   0.081000000000000
+      C =   0.005000000000000
+      
+      z = [] # initiate variables and append values
+      weights = []
+
+      z.append([eta]*d)
+      weights.append(A)
+
+      z.append([-eta]*d)
+      weights.append(A)
+      
+      for i in range(d):
+        z.append([xi]*i+[lam]+[xi]*(d-i-1))
+        weights.append(B)
+
+        z.append([-xi]*i+[-lam]+[-xi]*(d-i-1))
+        weights.append(B)
+
+        for j in range(i+1, d):
+          z.append([gam]*i+[mu]+[gam]*(j-i-1)+[mu]+[gam]*(d-j-1))
+          weights.append(C)
+
+          z.append([-gam]*i+[-mu]+[-gam]*(j-i-1)+[-mu]+[-gam]*(d-j-1))
+          weights.append(C)
+
+      z = [[np.sqrt(2)*y for y in x] for x in z]
+      return z, weights
    elif degree == 7:
       assert dimension == 3
       r = sqrt(15 + sqrt(15)) / 2
