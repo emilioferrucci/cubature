@@ -24,7 +24,7 @@ def solve_single_path(key, d, y0, A, B, tol):
 
     return diffeqsolve(
         term,
-        solver=Midpoint(),
+        solver=Dopri8(),
         t0=0,
         t1=1,
         dt0=tol,
