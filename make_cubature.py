@@ -143,9 +143,9 @@ cubature_3 = cubature_points(3)
 cubature_5 = cubature_points(5)
 cubature_7 = cubature_points(7)
 
-save_path_3 = Path(__file__).parent / "degree_30.pkl"
-save_path_5 = Path(__file__).parent / "degree_50.pkl"
-save_path_7 = Path(__file__).parent / "degree_70.pkl"
+save_path_3 = Path(__file__).parent / "degree_3.pkl"
+save_path_5 = Path(__file__).parent / "degree_5.pkl"
+save_path_7 = Path(__file__).parent / "degree_7.pkl"
 
 
 with open(save_path_3, "wb") as f:

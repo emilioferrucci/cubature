@@ -177,58 +177,6 @@ def multistep_cubature(y0, A, B, exp_pts, weights, no_intervals):
         ys = f(ys)  # becomes (N, ..., N, e)
     return weighted_sum(ys, weights)
 
-
-def plot_functions(fs, ms, labels=None, title="Function plots",
-                   xlabel="x", ylabel="f(x)", scale="linear", step=1):
-    """
-    Plots functions with markers and lines.
-    - Integer x-ticks and vertical grid lines
-    - Horizontal grid lines at powers of 10 if log scale
-    - Optional step spacing per function
-
-    Args:
-        fs: list of callables f(n) -> float
-        ms: list of ints, domain upper bounds per function
-        labels: optional list of strings
-        title: plot title
-        xlabel, ylabel: axis labels
-        scale: "linear", "log", or "log-log"
-        step: int or list of ints (spacing of input values)
-    """
-    assert len(fs) == len(ms), "fs and ms must be the same length"
-    if isinstance(step, int):
-        step = [step] * len(fs)
-    assert len(step) == len(fs), "step must be a single int or a list of same length as fs"
-
-    markers = ['^', 's', 'o', 'D', 'x']
-    max_x = max(ms)
-
-    for idx, (f, m, s) in enumerate(zip(fs, ms, step)):
-        x = list(range(s, m + 1, s))
-        y = [f(i) for i in x]
-        label = labels[idx] if labels else f"f{idx+1}"
-        plt.plot(x, y, marker=markers[idx % len(markers)], linestyle='-', label=label)
-
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-
-    if scale == "log-log":
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.grid(True, which='major', axis='both')
-    else:
-        plt.xticks(range(1, max_x + 1))
-        plt.grid(True, axis='x')
-        if scale == "log":
-            plt.yscale("log")
-            plt.grid(True, axis='y', which='major')
-        else:
-            plt.grid(True, axis='y')
-
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
     
     
 def plot_functions(fs, ms, labels=None, title="Function plots",
@@ -279,8 +227,28 @@ def plot_functions(fs, ms, labels=None, title="Function plots",
         else:
             plt.grid(True, axis='y')
 
-    plt.legend()
+    plt.legend(loc="lower right")
     plt.tight_layout()
     plt.show()
+    
+    
+def make_triple(e, d, key, drift = True):
+    k1, k2, k3 = jax.random.split(key, 3)
+    y0 = jax.random.normal(k1, (e,))
+    y0 = y0 / jnp.linalg.norm(y0)
+    A = jax.random.normal(k2, (e, e, d))
+    A = A / jnp.linalg.norm(A)
+    if drift:
+        B = jax.random.normal(k3, (e, e))
+        B = B / jnp.linalg.norm(B)
+    else: B = B = jnp.zeros((e,e))
+    return y0, A, B
+
+def avg_err(m, points, weights, triples, true_means):
+    errs = [
+        jnp.linalg.norm(multistep_cubature(y0, A, B, points, weights, m) - tm)
+        for (y0, A, B), tm in zip(triples, true_means)
+    ]
+    return jnp.mean(jnp.stack(errs))
 
 
