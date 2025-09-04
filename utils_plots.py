@@ -244,9 +244,10 @@ def make_triple(e, d, key, drift = True):
     else: B = B = jnp.zeros((e,e))
     return y0, A, B
 
+
 def avg_err(m, points, weights, triples, true_means):
     errs = [
-        jnp.linalg.norm(multistep_cubature(y0, A, B, points, weights, m) - tm)
+        jnp.linalg.norm(multistep_cubature(y0, A, B, points, weights, m) - tm) / jnp.linalg.norm(tm)
         for (y0, A, B), tm in zip(triples, true_means)
     ]
     return jnp.mean(jnp.stack(errs))
