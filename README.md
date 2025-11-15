@@ -4,7 +4,7 @@ Implementation for degree-7 cubature on Wiener space, based on our paper [1].
 
 The Gaussian cubature formulae are taken from [2]. The calculations in the free Lie algebra and tensor Hopf algebra make use of [3].
 
-A demo of cubature in degrees 3, 5 and 7 can be found in the notebook cubature_plots.ipynb . 
+A demo of cubature in degrees 3, 5 and 7 can be found in the notebook [cubature_plots.ipynb](https://github.com/emilioferrucci/cubature/blob/main/cubature_plots.ipynb). 
 
 
 
